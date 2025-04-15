@@ -26,14 +26,22 @@ def get_stats():
         query = """
         SELECT
             manager_id,
-            manager_first_name,
             total_calls,
-            total_peredan,
+            manager_name,
+            manager_first_name,
+            manager_last_name,
+            manager_username,
+            current_client_id,
+            current_client_name,
             total_umnik,
+            total_peredan,
+            total_perezvon,
+            total_spisali,
             total_ne_sushestvuet,
+            total_molodye,
+            total_ne_dozvon,
             total_kompaniya,
-            total_potracheno,
-            total_ne_dozvon
+            total_potracheno
         FROM manager_calls
         WHERE import_date = %s    
         """
