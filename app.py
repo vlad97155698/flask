@@ -5,52 +5,64 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+# Параметры подключения к БД
 DB_PARAMS = {
-    "host": "185.174.136.110",
-    "dbname": "bot_db",
-    "user": "postgres",
-    "password": "Qwertyasd1411"
+    "host": "185.174.136.110",  # замени на свой IP
+    "dbname": "your_db_name",
+    "user": "your_user",
+    "password": "your_password"
 }
+
 @app.route("/get-stats", methods=["POST"])
 def get_stats():
-    data = request.get_json()
-    start = data.get("start_date")
-    end = data.get("end_date")
+    try:
+        data = request.get_json()
+        start_date = data.get("start_date")
+        end_date = data.get("end_date")
 
-    if not start:
-        return jsonify({"error": "No start date"}), 400
+        if not start_date:
+            return jsonify({"error": "start_date is required"}), 400
 
-    query = """
-        SELECT
-            manager_id,
-            total_calls,
-            manager_name,
-            manager_first_name,
-            manager_last_name,
-            manager_username,
-            current_client_id,
-            current_client_name,
-            total_umnik,
-            total_peredan,
-            total_perezvon,
-            total_spisali,
-            total_ne_sushestvuet,
-            total_molodye,
-            total_ne_dozvon,
-            total_kompaniya,
-            total_potracheno
-        FROM manager_calls
-        WHERE import_date >= %s
-        """ + ("AND import_date <= %s" if end else "")
+        # Преобразуем в формат даты
+        start = datetime.strptime(start_date, "%d.%m.%Y").date()
+        params = [start]
+        query = """
+            SELECT
+                manager_id,
+                manager_first_name,
+                SUM(total_calls) AS total_calls,
+                SUM(total_umnik) AS total_umnik,
+                SUM(total_potracheno) AS total_potracheno,
+                SUM(total_kompaniya) AS total_kompaniya,
+                SUM(total_ne_sushestvuet) AS total_ne_sushestvuet,
+                SUM(total_ne_dozvon) AS total_ne_dozvon,
+                SUM(total_peredan) AS total_peredan,
+                SUM(total_perezvon) AS total_perezvon,
+                SUM(total_spisali) AS total_spisali,
+                SUM(total_molodye) AS total_molodye
+            FROM manager_calls
+            WHERE import_date >= %s
+        """
 
-    params = [start] + ([end] if end else [])
+        if end_date:
+            end = datetime.strptime(end_date, "%d.%m.%Y").date()
+            query += " AND import_date <= %s"
+            params.append(end)
 
-    df = pd.read_sql(query, conn, params=params)
-    conn.close()
-    result = df.fillna(0).to_dict(orient="records")
-    return jsonify(result)
+        query += " GROUP BY manager_id, manager_first_name ORDER BY manager_id"
+
+        conn = psycopg2.connect(**DB_PARAMS)
+        df = pd.read_sql(query, conn, params=params)
+        conn.close()
+
+        return jsonify(df.fillna(0).to_dict(orient="records"))
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/", methods=["GET"])
+def index():
+    return "API is running"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
