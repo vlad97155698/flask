@@ -11,19 +11,16 @@ DB_PARAMS = {
     "user": "postgres",
     "password": "Qwertyasd1411"
 }
-
 @app.route("/get-stats", methods=["POST"])
 def get_stats():
-    try:
-        data = request.get_json()
-        date_str = data.get("date")  # формат "01.04.2025"
-        if not date_str:
-            return jsonify({"error": "No date provided"}), 400
+    data = request.get_json()
+    start = data.get("start_date")
+    end = data.get("end_date")
 
-        import_date = datetime.strptime(date_str, "%d.%m.%Y").date()
+    if not start:
+        return jsonify({"error": "No start date"}), 400
 
-        conn = psycopg2.connect(**DB_PARAMS)
-        query = """
+    query = """
         SELECT
             manager_id,
             total_calls,
@@ -43,14 +40,15 @@ def get_stats():
             total_kompaniya,
             total_potracheno
         FROM manager_calls
-        WHERE import_date = %s    
-        """
-        df = pd.read_sql(query, conn, params=[import_date])
-        conn.close()
+        WHERE import_date >= %s
+        """ + ("AND import_date <= %s" if end else "")
 
-        result = df.fillna(0).to_dict(orient="records")
-        return jsonify(result)
+    params = [start] + ([end] if end else [])
 
+    df = pd.read_sql(query, conn, params=params)
+    conn.close()
+    result = df.fillna(0).to_dict(orient="records")
+    return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
