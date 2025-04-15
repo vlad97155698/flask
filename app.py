@@ -24,17 +24,18 @@ def get_stats():
 
         conn = psycopg2.connect(**DB_PARAMS)
         query = """
-            SELECT
-                manager_first_name,
-                total_calls,
-                total_peredan,
-                total_umnik,
-                total_ne_sushestvuet,
-                total_kompaniya,
-                total_potracheno,
-                total_ne_dozvon
-            FROM manager_calls
-            WHERE import_date = %s
+        SELECT
+            manager_id,
+            manager_first_name,
+            total_calls,
+            total_peredan,
+            total_umnik,
+            total_ne_sushestvuet,
+            total_kompaniya,
+            total_potracheno,
+            total_ne_dozvon
+        FROM manager_calls
+        WHERE import_date = %s    
         """
         df = pd.read_sql(query, conn, params=[import_date])
         conn.close()
