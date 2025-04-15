@@ -7,10 +7,10 @@ app = Flask(__name__)
 
 # Параметры подключения к БД
 DB_PARAMS = {
-    "host": "185.174.136.110",  # замени на свой IP
-    "dbname": "your_db_name",
-    "user": "your_user",
-    "password": "your_password"
+    "host": "185.174.136.110",
+    "dbname": "bot_db",
+    "user": "postgres",
+    "password": "Qwertyasd1411"
 }
 
 @app.route("/get-stats", methods=["POST"])
